@@ -8,11 +8,23 @@
     <script src="../../dist/vue.js"></script>
   </head>
   <body>
+    <div id="app"></div>
+    <div id="app2"></div>
     <script>
-      const { reactive } = Vue
+      const { reactive, effect } = Vue
       console.log(reactive)
       const obj = reactive({ foo: 'foo' })
       console.log(obj)
+
+      effect(() => {
+        document.querySelector('#app').innerText = obj.foo
+      })
+      effect(() => {
+        document.querySelector('#app2').innerText = obj.foo
+      })
+      setTimeout(() => {
+        obj.foo = 'bar'
+      }, 2000)
     </script>
   </body>
 </html>
