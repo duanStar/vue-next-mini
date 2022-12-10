@@ -38,3 +38,22 @@ export function createReactiveObject(
   proxyMap.set(target, proxyObj)
   return proxyObj
 }
+
+/**
+ * toRaw函数的作用是获取原始对象
+ * @param observed 被代理的对象
+ * @returns 原始对象
+ */
+export function toRaw<T>(observed: T) {
+  const raw = observed && observed?.['__v_raw']
+  return raw ? toRaw(raw) : observed
+}
+
+/**
+ * toReactive函数的作用是将一个普通对象转换成响应式对象
+ * @param value 原始对象
+ * @returns 响应式对象
+ */
+export function toReactive<T extends unknown>(value: T) {
+  return isObject(value) ? reactive(value) : value
+}
