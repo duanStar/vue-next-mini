@@ -18,6 +18,7 @@ function createSetter() {
     value: any,
     receiver: any
   ) {
+    if (target[key] === value) return true
     const res = Reflect.set(target, key, value, receiver)
     trigger(target, key)
     return res
