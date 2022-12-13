@@ -1,5 +1,7 @@
+import { ComputedRefImpl } from './computed'
 import { Dep, createDep } from './dep'
 
+export type EffectScheduler = (...args: any) => any
 export let activeEffect: ReactiveEffect | null = null
 
 const targetMap: WeakMap<object, Map<unknown, Dep>> = new WeakMap()
@@ -50,13 +52,25 @@ export function trigger(target: object, key: unknown) {
  */
 export function triggerEffects(dep: Dep) {
   const effects = Array.isArray(dep) ? dep : Array.from(dep)
+  // computed effect should be run first
   for (const effect of effects) {
-    triggerEffect(effect)
+    if (effect.computed) {
+      triggerEffect(effect)
+    }
+  }
+  for (const effect of effects) {
+    if (!effect.computed) {
+      triggerEffect(effect)
+    }
   }
 }
 
 export function triggerEffect(effect: ReactiveEffect) {
-  effect.run()
+  if (effect.scheduler) {
+    effect.scheduler()
+  } else {
+    effect.run()
+  }
 }
 
 export function effect<T = any>(fn: () => T) {
@@ -65,7 +79,11 @@ export function effect<T = any>(fn: () => T) {
 }
 
 export class ReactiveEffect<T = any> {
-  constructor(public fn: () => T) {}
+  computed?: ComputedRefImpl<T>
+  constructor(
+    public fn: () => T,
+    public scheduler: EffectScheduler | null = null
+  ) {}
 
   run() {
     activeEffect = this
