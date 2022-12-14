@@ -3,6 +3,11 @@ import { mutableHandlers } from './baseHandlers'
 
 export const reactiveMap = new WeakMap<object, any>()
 
+export enum ReactiveFlags {
+  IS_REACTIVE = '__v_isReactive',
+  RAW = '__v_raw'
+}
+
 /**
  * reactive函数的作用是将一个普通对象转换成响应式对象
  * @param target 被代理的对象
@@ -35,6 +40,7 @@ export function createReactiveObject(
   }
   // 创建代理对象
   const proxyObj = new Proxy(target, baseHandlers)
+  proxyObj[ReactiveFlags.IS_REACTIVE] = true
   proxyMap.set(target, proxyObj)
   return proxyObj
 }
@@ -45,7 +51,7 @@ export function createReactiveObject(
  * @returns 原始对象
  */
 export function toRaw<T>(observed: T) {
-  const raw = observed && observed?.['__v_raw']
+  const raw = observed && observed?.[ReactiveFlags.RAW]
   return raw ? toRaw(raw) : observed
 }
 
@@ -56,4 +62,8 @@ export function toRaw<T>(observed: T) {
  */
 export function toReactive<T extends unknown>(value: T) {
   return isObject(value) ? reactive(value) : value
+}
+
+export function isReactive(value: unknown): boolean {
+  return !!(value && value[ReactiveFlags.IS_REACTIVE] === true)
 }
