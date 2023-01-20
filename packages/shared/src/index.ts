@@ -31,3 +31,7 @@ export const isMap: (val: unknown) => val is Map<any, any> = (
 export const isPlainObject: (val: unknown) => val is object = (
   val: unknown
 ): val is object => toTypeString(val) === '[object Object]'
+
+export const isString: (val: unknown) => val is string = (
+  val: unknown
+): val is string => typeof val === 'string'
