@@ -1,2 +1,2 @@
 export { reactive, effect, ref, computed } from '@vue/reactivity'
-export { watch, h } from '@vue/runtime-core'
+export { watch, h, Fragment, Text, Comment } from '@vue/runtime-core'

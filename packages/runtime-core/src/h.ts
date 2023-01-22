@@ -11,13 +11,14 @@ import { createVnode, isVnode, VNode } from './vnode'
 export function h(type: any, propsOrChildren?: any, children?: any[]): VNode {
   let l = arguments.length
   if (l === 2) {
-    if (isArray(propsOrChildren)) {
-      return createVnode(type, null, propsOrChildren)
-    }
-    if (isObject(propsOrChildren) && isVnode(propsOrChildren)) {
-      return createVnode(type, null, [propsOrChildren])
+    if (isObject(propsOrChildren) && !isArray(propsOrChildren)) {
+      if (isVnode(propsOrChildren)) {
+        return createVnode(type, null, [propsOrChildren])
+      } else {
+        return createVnode(type, propsOrChildren, null)
+      }
     } else {
-      return createVnode(type, propsOrChildren, [])
+      return createVnode(type, null, propsOrChildren)
     }
   } else {
     if (l > 3) {
