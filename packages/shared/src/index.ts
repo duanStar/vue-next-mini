@@ -35,3 +35,12 @@ export const isPlainObject: (val: unknown) => val is object = (
 export const isString: (val: unknown) => val is string = (
   val: unknown
 ): val is string => typeof val === 'string'
+
+const onRE = /^on[^a-z]/
+export const isStartsWithOn = (str: string): boolean => onRE.test(str)
+
+export const camelize = (str: string): string =>
+  str.replace(/-(\w)/g, (_, c) => (c ? c.toUpperCase() : ''))
+
+export const capitalize = (str: string): string =>
+  str.charAt(0).toUpperCase() + str.slice(1)

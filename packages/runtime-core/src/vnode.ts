@@ -10,6 +10,7 @@ export interface VNode {
   props: any
   children: any
   shapeFlag: number
+  el: any | null
 }
 
 export const Fragment = Symbol('Fragment')
@@ -40,7 +41,7 @@ export function createVnode(type: any, props: any, children: any): VNode {
   const shapeFlag = isString(type)
     ? ShapeFlags.ELEMENT
     : isObject(type)
-    ? ShapeFlags.STATEFUL_COMPONENT
+    ? ShapeFlags.COMPONENT
     : 0
   return createBaseVnode(type, props, children, shapeFlag)
 }
@@ -56,7 +57,8 @@ function createBaseVnode(
     type,
     props,
     children,
-    shapeFlag
+    shapeFlag,
+    el: null
   }
   if (children) {
     normalizeChildren(vnode, children)
