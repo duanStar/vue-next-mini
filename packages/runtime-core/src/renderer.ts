@@ -7,6 +7,7 @@ export interface RenderOptions {
   setElementText(node: Element, text: string): void
   insert(el, parent: Element, anchor: any): void
   createElement(type: string): Element
+  remove(el: Element): void
 }
 
 export function createRenderer(options: RenderOptions) {
@@ -18,9 +19,11 @@ function baseCreateRenderer(options: RenderOptions) {
     insert: hostInsert,
     createElement: hostCreateElement,
     patchProp: hostPatchProp,
-    setElementText: hostSetElementText
+    setElementText: hostSetElementText,
+    remove: hostRemove
   } = options
 
+  // 挂载元素
   const mountElement = (vnode: VNode, container, anchor) => {
     const { type, shapeFlag, props } = vnode
     // 1.创建元素
@@ -42,6 +45,7 @@ function baseCreateRenderer(options: RenderOptions) {
     hostInsert(el, container, anchor)
   }
 
+  // 更新元素
   const patchElement = (n1: VNode, n2: VNode, container) => {
     let el = (n2.el = n1.el)
     const oldProps = n1.props || EMPTY_OBJ
@@ -52,6 +56,7 @@ function baseCreateRenderer(options: RenderOptions) {
     patchProps(el, n2, oldProps, newProps)
   }
 
+  // 更新子节点
   const patchChildren = (n1: VNode, n2: VNode, container, anchor) => {
     const c1 = n1 && n1.children
     const prevShapeFlag = n1 ? n1.shapeFlag : 0
@@ -83,6 +88,7 @@ function baseCreateRenderer(options: RenderOptions) {
     }
   }
 
+  // 更新属性
   const patchProps = (el, vnode, oldProps, newProps) => {
     if (oldProps !== newProps) {
       for (const key in newProps) {
@@ -102,6 +108,7 @@ function baseCreateRenderer(options: RenderOptions) {
     }
   }
 
+  // 处理元素节点
   const processElement = (n1: VNode | null, n2: VNode, container, anchor) => {
     if (n1 == null) {
       mountElement(n2, container, anchor)
@@ -110,9 +117,15 @@ function baseCreateRenderer(options: RenderOptions) {
     }
   }
 
+  const unmount = (vnode: VNode) => {
+    hostRemove(vnode.el)
+  }
+
+  // 开始更新
   const patch = (n1: VNode | null, n2: VNode, container, anchor = null) => {
     if (n1 === n2) return
     if (n1 && !isSameVNodeType(n1, n2)) {
+      unmount(n1)
       n1 = null
     }
     const { type, shapeFlag } = n2
@@ -132,6 +145,9 @@ function baseCreateRenderer(options: RenderOptions) {
   }
   const render = (vnode: VNode, container) => {
     if (vnode == null) {
+      if (container._vnode) {
+        unmount(container._vnode)
+      }
     } else {
       patch(container._vnode || null, vnode, container)
     }
