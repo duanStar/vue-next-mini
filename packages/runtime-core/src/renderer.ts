@@ -1,5 +1,6 @@
-import { EMPTY_OBJ } from '@vue/shared'
+import { EMPTY_OBJ, isString } from '@vue/shared'
 import { ShapeFlags } from 'packages/shared/src/shapeFlags'
+import { normalizeVNode } from './componentRenderUtils'
 import { Comment, Fragment, isSameVNodeType, Text, VNode } from './vnode'
 
 export interface RenderOptions {
@@ -8,6 +9,9 @@ export interface RenderOptions {
   insert(el, parent: Element, anchor: any): void
   createElement(type: string): Element
   remove(el: Element): void
+  createText(text: string): Text
+  setText(node: Text, text: string): void
+  createComment(text: string): Comment
 }
 
 export function createRenderer(options: RenderOptions) {
@@ -20,7 +24,10 @@ function baseCreateRenderer(options: RenderOptions) {
     createElement: hostCreateElement,
     patchProp: hostPatchProp,
     setElementText: hostSetElementText,
-    remove: hostRemove
+    remove: hostRemove,
+    createText: hostCreateText,
+    setText: hostSetText,
+    createComment: hostCreateComment
   } = options
 
   // 挂载元素
@@ -88,6 +95,17 @@ function baseCreateRenderer(options: RenderOptions) {
     }
   }
 
+  // 挂载子节点
+  const mountChildren = (children, container, anchor) => {
+    if (isString(children)) {
+      children = children.split('')
+    }
+    for (let i = 0; i < children.length; i++) {
+      const child = (children[i] = normalizeVNode(children[i]))
+      patch(null, child, container, anchor)
+    }
+  }
+
   // 更新属性
   const patchProps = (el, vnode, oldProps, newProps) => {
     if (oldProps !== newProps) {
@@ -117,8 +135,48 @@ function baseCreateRenderer(options: RenderOptions) {
     }
   }
 
+  // 卸载元素
   const unmount = (vnode: VNode) => {
     hostRemove(vnode.el)
+  }
+
+  // 处理文本节点
+  const processText = (n1: VNode | null, n2: VNode, container, anchor) => {
+    if (n1 == null) {
+      hostInsert(
+        (n2.el = hostCreateText(n2.children as string)),
+        container,
+        anchor
+      )
+    } else {
+      const el = (n2.el = n1.el)
+      if (n2.children !== n1.children) {
+        hostSetText(el, n2.children as string)
+      }
+    }
+  }
+
+  // 处理注释节点
+  const processComment = (n1: VNode | null, n2: VNode, container, anchor) => {
+    if (n1 == null) {
+      hostInsert(
+        (n2.el = hostCreateComment(n2.children as string)),
+        container,
+        anchor
+      )
+    } else {
+      // 不支持动态修改注释节点
+      n2.el = n1.el
+    }
+  }
+
+  // 处理 Fragment
+  const processFragment = (n1: VNode | null, n2: VNode, container, anchor) => {
+    if (n1 == null) {
+      mountChildren(n2.children, container, anchor)
+    } else {
+      patchChildren(n1, n2, container, anchor)
+    }
   }
 
   // 开始更新
@@ -131,10 +189,13 @@ function baseCreateRenderer(options: RenderOptions) {
     const { type, shapeFlag } = n2
     switch (type) {
       case Text:
+        processText(n1, n2, container, anchor)
         break
       case Comment:
+        processComment(n1, n2, container, anchor)
         break
       case Fragment:
+        processFragment(n1, n2, container, anchor)
         break
       default:
         if (ShapeFlags.ELEMENT & shapeFlag) {
@@ -143,6 +204,8 @@ function baseCreateRenderer(options: RenderOptions) {
         }
     }
   }
+
+  // render函数
   const render = (vnode: VNode, container) => {
     if (vnode == null) {
       if (container._vnode) {
@@ -153,6 +216,7 @@ function baseCreateRenderer(options: RenderOptions) {
     }
     container._vnode = vnode
   }
+
   return {
     render
   }
