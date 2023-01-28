@@ -3,6 +3,7 @@ import { patchClass } from './modules/class'
 import { patchStyle } from './modules/style'
 import { patchDOMProp } from './modules/props'
 import { patchAttr } from './modules/attrs'
+import { patchEvent } from './modules/events'
 
 export const patchProp = (el, key, prevValue, nextValue) => {
   if (key === 'class') {
@@ -10,6 +11,7 @@ export const patchProp = (el, key, prevValue, nextValue) => {
   } else if (key === 'style') {
     patchStyle(el, prevValue, nextValue)
   } else if (isStartsWithOn(key)) {
+    patchEvent(el, key, prevValue, nextValue)
   } else if (shouldSetAsProp(el, key)) {
     patchDOMProp(el, key, nextValue, prevValue)
   } else {
