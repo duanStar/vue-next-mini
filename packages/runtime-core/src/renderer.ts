@@ -1,6 +1,9 @@
 import { EMPTY_OBJ, isString } from '@vue/shared'
+import { ReactiveEffect } from 'packages/reactivity/src/effect'
 import { ShapeFlags } from 'packages/shared/src/shapeFlags'
-import { normalizeVNode } from './componentRenderUtils'
+import { createComponentInstance, setupComponent } from './component'
+import { normalizeVNode, renderComponentRoot } from './componentRenderUtils'
+import { queuePreFlushCb } from './scheduler'
 import { Comment, Fragment, isSameVNodeType, Text, VNode } from './vnode'
 
 export interface RenderOptions {
@@ -179,6 +182,42 @@ function baseCreateRenderer(options: RenderOptions) {
     }
   }
 
+  // 处理组件
+  const processComponent = (n1: VNode | null, n2: VNode, container, anchor) => {
+    if (n1 == null) {
+      mountComponent(n2, container, anchor)
+    } else {
+    }
+  }
+
+  // 挂载组件
+  const mountComponent = (initialVNode: VNode, container, anchor) => {
+    const instance = (initialVNode.component =
+      createComponentInstance(initialVNode))
+    setupComponent(instance)
+    setupRenderEffect(instance, initialVNode, container, anchor)
+  }
+
+  function setupRenderEffect(instance, initialVNode: VNode, container, anchor) {
+    const componentUpdateFn = () => {
+      if (!instance.isMounted) {
+        const subTree = (instance.subTree = renderComponentRoot(instance))
+        patch(null, subTree, container, anchor)
+        initialVNode.el = subTree.el
+      } else {
+      }
+    }
+
+    const effect = (instance.effect = new ReactiveEffect(
+      componentUpdateFn,
+      () => queuePreFlushCb(update)
+    ))
+
+    const update = (instance.update = () => effect.run())
+
+    update()
+  }
+
   // 开始更新
   const patch = (n1: VNode | null, n2: VNode, container, anchor = null) => {
     if (n1 === n2) return
@@ -201,6 +240,7 @@ function baseCreateRenderer(options: RenderOptions) {
         if (ShapeFlags.ELEMENT & shapeFlag) {
           processElement(n1, n2, container, anchor)
         } else if (ShapeFlags.COMPONENT & shapeFlag) {
+          processComponent(n1, n2, container, anchor)
         }
     }
   }

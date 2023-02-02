@@ -12,6 +12,7 @@ export interface VNode {
   shapeFlag: number
   el: any | null
   key?: any
+  component?: any
 }
 
 export const Fragment = Symbol('Fragment')
