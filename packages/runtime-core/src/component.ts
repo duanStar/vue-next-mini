@@ -1,3 +1,5 @@
+import { reactive } from '@vue/reactivity'
+import { isObject } from '@vue/shared'
 import { VNode } from './vnode'
 
 let uid = 0
@@ -28,8 +30,16 @@ function finishComponentSetup(instance) {
   const Component = instance.type
   const { setup, render } = Component
   instance.render = render
-  if (setup) {
-    // const setupResult = setup()
-    // handleSetupResult(instance, setupResult)
+
+  applyOptions(instance)
+}
+
+function applyOptions(instance) {
+  const { data: dataOptions } = instance.type
+  if (dataOptions) {
+    const data = dataOptions()
+    if (isObject(data)) {
+      instance.data = reactive(data)
+    }
   }
 }
