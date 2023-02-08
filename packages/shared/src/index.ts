@@ -44,3 +44,9 @@ export const camelize = (str: string): string =>
 
 export const capitalize = (str: string): string =>
   str.charAt(0).toUpperCase() + str.slice(1)
+
+export const invokeArrayFns = (fns: Function[], arg?: any): void => {
+  for (let i = 0; i < fns.length; i++) {
+    fns[i](arg)
+  }
+}

@@ -1,4 +1,4 @@
-import { EMPTY_OBJ, isString } from '@vue/shared'
+import { EMPTY_OBJ, invokeArrayFns, isString } from '@vue/shared'
 import { ReactiveEffect } from 'packages/reactivity/src/effect'
 import { ShapeFlags } from 'packages/shared/src/shapeFlags'
 import { createComponentInstance, setupComponent } from './component'
@@ -201,9 +201,20 @@ function baseCreateRenderer(options: RenderOptions) {
   function setupRenderEffect(instance, initialVNode: VNode, container, anchor) {
     const componentUpdateFn = () => {
       if (!instance.isMounted) {
+        const { bm, m } = instance
+
+        if (bm) {
+          invokeArrayFns(bm)
+        }
+
         const subTree = (instance.subTree = renderComponentRoot(instance))
         patch(null, subTree, container, anchor)
         initialVNode.el = subTree.el
+
+        if (m) {
+          invokeArrayFns(m)
+        }
+        instance.isMounted = true
       } else {
       }
     }
