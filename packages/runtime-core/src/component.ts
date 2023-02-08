@@ -57,7 +57,7 @@ function applyOptions(instance) {
   } = instance.type
 
   if (beforeCreate) {
-    callHook(beforeCreate)
+    callHook(beforeCreate, instance)
   }
 
   if (dataOptions) {
@@ -68,17 +68,17 @@ function applyOptions(instance) {
   }
 
   if (created) {
-    callHook(created)
+    callHook(created, instance)
   }
 
   function registerLifecycleHook(register: Function, hook?: Function) {
-    register(hook, instance)
+    register(hook?.bind(instance.data), instance)
   }
 
   registerLifecycleHook(onBeforeMount, beforeMount)
   registerLifecycleHook(onMounted, mounted)
 }
 
-function callHook(hook: Function) {
-  hook()
+function callHook(hook: Function, instance) {
+  hook.call(instance.data)
 }
