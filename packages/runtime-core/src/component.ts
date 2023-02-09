@@ -1,6 +1,11 @@
 import { reactive } from '@vue/reactivity'
 import { isObject } from '@vue/shared'
-import { onBeforeMount, onMounted } from './apiLifecycle'
+import {
+  onBeforeMount,
+  onBeforeUpdate,
+  onMounted,
+  onUpdated
+} from './apiLifecycle'
 import { VNode } from './vnode'
 
 let uid = 0
@@ -9,7 +14,11 @@ export const enum LifecycleHooks {
   BEFORE_CREATE = 'bc',
   CREATED = 'c',
   BEFORE_MOUNT = 'bm',
-  MOUNTED = 'm'
+  MOUNTED = 'm',
+  BEFORE_UPDATE = 'bu',
+  UPDATED = 'u',
+  BEFORE_UNMOUNT = 'bum',
+  UNMOUNTED = 'um'
 }
 
 export function createComponentInstance(vnode: VNode) {
@@ -25,7 +34,12 @@ export function createComponentInstance(vnode: VNode) {
     bc: null,
     c: null,
     bm: null,
-    m: null
+    m: null,
+    bu: null,
+    u: null,
+    bum: null,
+    um: null,
+    next: null
   }
   return instance
 }
@@ -53,7 +67,9 @@ function applyOptions(instance) {
     beforeCreate,
     created,
     beforeMount,
-    mounted
+    mounted,
+    beforeUpdate,
+    updated
   } = instance.type
 
   if (beforeCreate) {
@@ -77,8 +93,10 @@ function applyOptions(instance) {
 
   registerLifecycleHook(onBeforeMount, beforeMount)
   registerLifecycleHook(onMounted, mounted)
+  registerLifecycleHook(onBeforeUpdate, beforeUpdate)
+  registerLifecycleHook(onUpdated, updated)
 }
 
 function callHook(hook: Function, instance) {
-  hook.call(instance.data)
+  hook?.call(instance.data)
 }

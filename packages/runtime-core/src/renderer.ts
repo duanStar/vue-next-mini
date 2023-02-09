@@ -216,6 +216,24 @@ function baseCreateRenderer(options: RenderOptions) {
         }
         instance.isMounted = true
       } else {
+        let { bu, u, next, vnode, subTree } = instance
+
+        if (bu) {
+          invokeArrayFns(bu)
+        }
+        if (next == null) {
+          next = vnode
+        }
+
+        const nextTree = renderComponentRoot(instance)
+        const prevTree = subTree
+        instance.subTree = nextTree
+        patch(prevTree, nextTree, container, anchor)
+        next.el = nextTree.el
+
+        if (u) {
+          invokeArrayFns(u)
+        }
       }
     }
 
