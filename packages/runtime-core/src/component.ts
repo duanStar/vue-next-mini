@@ -1,5 +1,5 @@
 import { reactive } from '@vue/reactivity'
-import { isObject } from '@vue/shared'
+import { isFunction, isObject } from '@vue/shared'
 import {
   onBeforeMount,
   onBeforeUpdate,
@@ -49,13 +49,29 @@ export function setupComponent(instance) {
 }
 
 function setupStatefulComponent(instance) {
+  const Component = instance.type
+  const { setup } = Component
+  if (setup) {
+    const setupResult = setup()
+    handleSetupResult(instance, setupResult)
+  } else {
+    finishComponentSetup(instance)
+  }
+}
+
+export function handleSetupResult(instance, setupResult) {
+  if (isFunction(setupResult)) {
+    instance.render = setupResult
+  }
   finishComponentSetup(instance)
 }
 
 function finishComponentSetup(instance) {
   const Component = instance.type
-  const { setup, render } = Component
-  instance.render = render
+  const { render } = Component
+  if (render && !instance.render) {
+    instance.render = render
+  }
 
   applyOptions(instance)
 }
