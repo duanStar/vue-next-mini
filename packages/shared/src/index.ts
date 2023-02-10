@@ -1,6 +1,8 @@
 export const isObject = (val: unknown): val is Record<any, any> =>
   val !== null && typeof val === 'object'
 
+export const EMPTY_ARR = []
+
 export const hasChanged = (value: unknown, oldValue: unknown): boolean =>
   !Object.is(value, oldValue)
 

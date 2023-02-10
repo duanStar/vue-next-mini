@@ -1,4 +1,4 @@
-import { EMPTY_OBJ, invokeArrayFns, isString } from '@vue/shared'
+import { EMPTY_ARR, EMPTY_OBJ, invokeArrayFns, isString } from '@vue/shared'
 import { ReactiveEffect } from 'packages/reactivity/src/effect'
 import { ShapeFlags } from 'packages/shared/src/shapeFlags'
 import { createComponentInstance, setupComponent } from './component'
@@ -42,7 +42,7 @@ function baseCreateRenderer(options: RenderOptions) {
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       hostSetElementText(el, vnode.children)
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      // mountChildren(vnode.children, el)
+      mountChildren(vnode.children, el, anchor)
     }
 
     // 3.处理属性
@@ -83,7 +83,7 @@ function baseCreateRenderer(options: RenderOptions) {
     } else {
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-          // TODO: diff
+          patchKeyedChildren(c1, c2, container, anchor)
         } else {
           // TODO: 卸载子节点
         }
@@ -92,10 +92,145 @@ function baseCreateRenderer(options: RenderOptions) {
           hostSetElementText(container, '')
         }
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-          // mountChildren(c2, container)
+          mountChildren(c2, container, anchor)
         }
       }
     }
+  }
+
+  // 更新diff子节点
+  const patchKeyedChildren = (c1, c2, container, parentAnchor) => {
+    let i = 0
+    let l2 = c2.length
+    let e1 = c1.length - 1
+    let e2 = l2 - 1
+    // 1.从前往后比较
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[i]
+      const n2 = c2[i]
+      if (isSameVNodeType(n1, n2)) {
+        patch(n1, n2, container, null)
+      } else {
+        break
+      }
+      i++
+    }
+
+    // 2.从后往前比较
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[e1]
+      const n2 = c2[e2]
+      if (isSameVNodeType(n1, n2)) {
+        patch(n1, n2, container, null)
+      } else {
+        break
+      }
+      e1--
+      e2--
+    }
+
+    // 3.新节点比旧节点多
+    if (i > e1) {
+      if (i <= e2) {
+        const nextPos = e2 + 1
+        const anchor = nextPos < l2 ? c2[e2 + 1].el : parentAnchor
+        while (i <= e2) {
+          patch(null, c2[i], container, anchor)
+          i++
+        }
+      }
+    }
+    // 4.旧节点比新节点多
+    else if (i > e2) {
+      if (i <= e1) {
+        while (i <= e1) {
+          unmount(c1[i])
+          i++
+        }
+      }
+    }
+    // 5.旧节点和新节点都有,乱序
+    else {
+      const s1 = i
+      const s2 = i
+
+      // 5.1.创建新节点的key到index的映射
+      const keyToNewIndexMap = new Map()
+      for (i = s2; i <= e2; i++) {
+        const nextChild = c2[i]
+        if (nextChild.key) {
+          keyToNewIndexMap.set(nextChild.key, i)
+        }
+      }
+
+      // 5.2.遍历旧节点，找到可以复用或者删除的节点
+      let j
+      let patched = 0
+      let toBePatched = e2 - s2 + 1
+      let moved = false
+      let maxNewIndexSoFar = 0
+      const newIndexToOldIndexMap = new Array(toBePatched)
+      for (i = 0; i < toBePatched; i++) newIndexToOldIndexMap[i] = 0
+
+      for (i = s1; i <= e1; i++) {
+        const prevChild = c1[i]
+        if (patched >= toBePatched) {
+          unmount(prevChild)
+          continue
+        }
+        let newIndex
+        if (prevChild.key) {
+          newIndex = keyToNewIndexMap.get(prevChild.key)
+        } else {
+          for (j = s2; j <= e2; j++) {
+            if (
+              newIndexToOldIndexMap[j - s2] === 0 &&
+              isSameVNodeType(prevChild, c2[j])
+            ) {
+              newIndex = j
+              break
+            }
+          }
+        }
+        if (newIndex === undefined) {
+          unmount(prevChild)
+        } else {
+          newIndexToOldIndexMap[newIndex - s2] = i + 1
+          if (newIndex >= maxNewIndexSoFar) {
+            maxNewIndexSoFar = newIndex
+          } else {
+            moved = true
+          }
+          patch(prevChild, c2[newIndex], container, parentAnchor)
+          patched++
+        }
+      }
+
+      // 5.3.移动节点
+      const increasingNewIndexSequence = moved
+        ? getSequence(newIndexToOldIndexMap)
+        : EMPTY_ARR
+      j = increasingNewIndexSequence.length - 1
+      for (i = toBePatched - 1; i >= 0; i--) {
+        const newIndex = s2 + i
+        const newChild = c2[newIndex]
+        const anchor = newIndex + 1 < l2 ? c2[newIndex + 1].el : parentAnchor
+        if (newIndexToOldIndexMap[i] === 0) {
+          patch(null, newChild, container, anchor)
+        } else if (moved) {
+          if (j < 0 || i !== increasingNewIndexSequence[j]) {
+            move(newChild, container, anchor)
+          } else {
+            j--
+          }
+        }
+      }
+    }
+  }
+
+  // 移动节点
+  const move = (vnode, container, anchor) => {
+    hostInsert(vnode.el, container, anchor)
   }
 
   // 挂载子节点
@@ -289,4 +424,47 @@ function baseCreateRenderer(options: RenderOptions) {
   return {
     render
   }
+}
+
+// 获取最长递增子序列
+function getSequence(arr: any[]): number[] {
+  const p = arr.slice()
+  const result = [0]
+  let i, j, u, v, c
+  const len = arr.length
+  for (i = 0; i < len; i++) {
+    let arrI = arr[i]
+    if (arrI != 0) {
+      j = result[result.length - 1]
+      if (arrI > arr[j]) {
+        p[i] = j
+        result.push(i)
+        continue
+      } else {
+        u = 0
+        v = result.length - 1
+        while (u < v) {
+          c = (u + v) >> 1
+          if (arr[result[c]] < arrI) {
+            u = c + 1
+          } else {
+            v = c
+          }
+        }
+        if (arrI < arr[result[u]]) {
+          if (u > 0) {
+            p[i] = result[u - 1]
+          }
+          result[u] = i
+        }
+      }
+    }
+  }
+  u = result.length
+  v = result[u - 1]
+  while (u-- > 0) {
+    result[u] = v
+    v = p[v]
+  }
+  return result
 }
