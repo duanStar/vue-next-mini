@@ -52,3 +52,6 @@ export const invokeArrayFns = (fns: Function[], arg?: any): void => {
     fns[i](arg)
   }
 }
+
+export const startsWith = (str: string, searchString: string): boolean =>
+  str.startsWith(searchString)
