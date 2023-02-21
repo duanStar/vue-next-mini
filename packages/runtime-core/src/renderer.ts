@@ -75,7 +75,7 @@ function baseCreateRenderer(options: RenderOptions) {
 
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-        // TODO: 卸载子节点
+        unmountChildren(c1)
       }
       if (c2 !== c1) {
         hostSetElementText(container, c2)
@@ -85,7 +85,7 @@ function baseCreateRenderer(options: RenderOptions) {
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
           patchKeyedChildren(c1, c2, container, anchor)
         } else {
-          // TODO: 卸载子节点
+          unmountChildren(c1)
         }
       } else {
         if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
@@ -95,6 +95,12 @@ function baseCreateRenderer(options: RenderOptions) {
           mountChildren(c2, container, anchor)
         }
       }
+    }
+  }
+
+  const unmountChildren = children => {
+    for (let i = 0; i < children.length; i++) {
+      unmount(children[i])
     }
   }
 

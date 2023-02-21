@@ -1,3 +1,6 @@
+import { CREATE_ELEMENT_VNODE } from './runtimeHelpers'
+import { TransformContext } from './transform'
+
 export const enum NodeTypes {
   ROOT,
   ELEMENT,
@@ -39,10 +42,30 @@ export const enum ElementTypes {
   TEMPLATE
 }
 
+// 生成ast
 export function createRoot(children: any[]) {
   return {
     type: NodeTypes.ROOT,
     children,
     loc: {}
+  }
+}
+
+// 创建 codegenNode
+export function createVNodeCall(
+  context: TransformContext,
+  tag,
+  props?,
+  children?
+) {
+  if (context) {
+    context.helper(CREATE_ELEMENT_VNODE)
+  }
+
+  return {
+    type: NodeTypes.VNODE_CALL,
+    tag,
+    props,
+    children
   }
 }
