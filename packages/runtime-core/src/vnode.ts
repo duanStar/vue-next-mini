@@ -48,6 +48,8 @@ export function createVnode(type: any, props: any, children: any): VNode {
   return createBaseVnode(type, props, children, shapeFlag)
 }
 
+export { createVnode as createElementVNode }
+
 function createBaseVnode(
   type: any,
   props: any,

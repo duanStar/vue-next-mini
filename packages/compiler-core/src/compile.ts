@@ -1,4 +1,5 @@
 import { extend } from '@vue/shared'
+import { generate } from './codegen'
 import { baseParse } from './parse'
 import { transform } from './transform'
 import { transformElement } from './transforms/transformElement'
@@ -12,6 +13,6 @@ export function baseCompile(template: string, options = {}) {
       nodeTransforms: [transformElement, transformText]
     })
   )
-  console.log(ast)
-  return {}
+
+  return generate(ast, options)
 }

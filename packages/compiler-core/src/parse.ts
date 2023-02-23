@@ -128,7 +128,7 @@ function parseTag(context: ParserContext, type: TagType) {
 
 // 向前移动指针，更新上下文的 source
 function advanceBy(context: ParserContext, numberOfCharacters: number) {
-  context.source = context.source.slice(numberOfCharacters)
+  context.source = context.source.slice(numberOfCharacters).trimStart()
 }
 
 // 判断是否到达模板末尾
