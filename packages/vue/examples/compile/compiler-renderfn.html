@@ -8,12 +8,25 @@
     <script src="../../dist/vue.js"></script>
   </head>
   <body>
+    <div id="root"></div>
     <script>
-      const { compile } = Vue
+      const { compile, h, render } = Vue
 
-      const render = compile(`<div>sb<span>Hello World</span></div>`)
+      const renderFn = compile(`<div>sb<span>Hello World: {{msg}}</span></div>`)
 
-      console.log(render())
+      console.log(
+        render(
+          h({
+            data() {
+              return {
+                msg: '123'
+              }
+            },
+            render: renderFn
+          }),
+          document.querySelector('#root')
+        )
+      )
     </script>
   </body>
 </html>

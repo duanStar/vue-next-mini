@@ -33,7 +33,7 @@ function parseChildren(context: ParserContext, ancestors: any[]) {
     const s = context.source
     let node
     if (startsWith(s, '{{')) {
-      // TODO: 模板表达式
+      node = parseInterpolation(context)
     } else if (s[0] === '<') {
       if (/[a-z]/i.test(s[1])) {
         node = parseElement(context, ancestors)
@@ -153,4 +153,26 @@ function startsWithEndTagOpen(source: string, tag: string): boolean {
     source.slice(2, tag.length + 2) === tag &&
     /[\t\r\n\f />]/.test(source[tag.length + 2] || '>')
   )
+}
+
+// 解析插值表达式
+function parseInterpolation(context: ParserContext) {
+  const [open, close] = ['{{', '}}']
+
+  advanceBy(context, open.length)
+
+  const closeIndex = context.source.indexOf(close)
+  const preTrimContent = parseTextData(context, closeIndex)
+  const content = preTrimContent.trim()
+
+  advanceBy(context, close.length)
+
+  return {
+    type: NodeTypes.INTERPOLATION,
+    content: {
+      type: NodeTypes.SIMPLE_EXPRESSION,
+      content,
+      isStatic: false
+    }
+  }
 }

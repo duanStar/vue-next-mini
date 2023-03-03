@@ -1,6 +1,6 @@
 import { isArray, isString } from '@vue/shared'
 import { NodeTypes } from './ast'
-import { helperNameMap } from './runtimeHelpers'
+import { helperNameMap, TO_DISPLAY_STRING } from './runtimeHelpers'
 import { getVnodeHelper } from './utils'
 
 const aliasHelper = (key: symbol) =>
@@ -34,6 +34,9 @@ export function generate(ast, options) {
   push(`function ${functionName}(${signatures}) {`)
   indent()
 
+  push(`with (_ctx) {`)
+  indent()
+
   const hasHelpers = ast.helpers.length > 0
   if (hasHelpers) {
     push(
@@ -51,6 +54,9 @@ export function generate(ast, options) {
   } else {
     push(`null`)
   }
+
+  deIndent()
+  push(`}`)
 
   deIndent()
   push(`}`)
@@ -113,6 +119,43 @@ function genNode(node, context: CodegenContext) {
     case NodeTypes.ELEMENT:
       genVNodeCall(node.codegenNode, context)
       break
+    case NodeTypes.SIMPLE_EXPRESSION:
+      genExpression(node, context)
+      break
+    case NodeTypes.INTERPOLATION:
+      genInterpolation(node, context)
+      break
+    case NodeTypes.COMPOUND_EXPRESSION:
+      genCompoundExpression(node, context)
+      break
+  }
+}
+
+// 处理表达式
+function genExpression(node, context: CodegenContext) {
+  const { content, isStatic } = node
+  context.push(isStatic ? JSON.stringify(content) : content)
+}
+
+// 处理插值表达式
+function genInterpolation(node, context: CodegenContext) {
+  const { content } = node
+  const { push, helper } = context
+  push(`${helper(TO_DISPLAY_STRING)}(`)
+  genNode(content, context)
+  push(`)`)
+}
+
+// 处理复合表达式
+function genCompoundExpression(node, context: CodegenContext) {
+  const { children } = node
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]
+    if (isString(child)) {
+      context.push(child)
+    } else {
+      genNode(child, context)
+    }
   }
 }
 

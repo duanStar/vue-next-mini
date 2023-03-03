@@ -9,3 +9,4 @@ export {
 } from '@vue/runtime-core'
 export { render } from '@vue/runtime-dom'
 export { compile } from '@vue/vue-compat'
+export { toDisplayString } from '@vue/shared'
