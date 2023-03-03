@@ -117,7 +117,7 @@ function genNode(node, context: CodegenContext) {
       genText(node, context)
       break
     case NodeTypes.ELEMENT:
-      genVNodeCall(node.codegenNode, context)
+      genNode(node.codegenNode, context)
       break
     case NodeTypes.SIMPLE_EXPRESSION:
       genExpression(node, context)
