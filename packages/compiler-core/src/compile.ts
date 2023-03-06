@@ -7,6 +7,7 @@ import { transformText } from './transforms/transformText'
 
 export function baseCompile(template: string, options = {}) {
   const ast = baseParse(template)
+  console.log(ast)
   transform(
     ast,
     extend(options, {
