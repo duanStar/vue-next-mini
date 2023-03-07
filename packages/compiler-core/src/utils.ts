@@ -8,3 +8,7 @@ export const isText = node =>
 export const getVnodeHelper = (ssr: boolean, isComponent: boolean) => {
   return ssr || isComponent ? CREATE_VNODE : CREATE_ELEMENT_VNODE
 }
+
+export function getMemoedVNodeCall(node) {
+  return node
+}
