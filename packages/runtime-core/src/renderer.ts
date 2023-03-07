@@ -1,6 +1,7 @@
 import { EMPTY_ARR, EMPTY_OBJ, invokeArrayFns, isString } from '@vue/shared'
 import { ReactiveEffect } from 'packages/reactivity/src/effect'
 import { ShapeFlags } from 'packages/shared/src/shapeFlags'
+import { createAppAPI } from './apiCreateApp'
 import { createComponentInstance, setupComponent } from './component'
 import { normalizeVNode, renderComponentRoot } from './componentRenderUtils'
 import { queuePreFlushCb } from './scheduler'
@@ -428,7 +429,8 @@ function baseCreateRenderer(options: RenderOptions) {
   }
 
   return {
-    render
+    render,
+    createApp: createAppAPI(render)
   }
 }
 

@@ -9,6 +9,7 @@ import {
 import { VNode } from './vnode'
 
 let uid = 0
+let compile: any = null
 
 export const enum LifecycleHooks {
   BEFORE_CREATE = 'bc',
@@ -68,12 +69,22 @@ export function handleSetupResult(instance, setupResult) {
 
 function finishComponentSetup(instance) {
   const Component = instance.type
-  const { render } = Component
+  let { render } = Component
+  if (!render && compile) {
+    if (Component.template) {
+      render = Component.render = compile(Component.template, {})
+    }
+  }
+
   if (render && !instance.render) {
     instance.render = render
   }
 
   applyOptions(instance)
+}
+
+export function registerRuntimeCompiler(_compiler: any) {
+  compile = _compiler
 }
 
 // init options
