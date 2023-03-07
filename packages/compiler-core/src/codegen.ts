@@ -116,6 +116,7 @@ function genNode(node, context: CodegenContext) {
     case NodeTypes.TEXT:
       genText(node, context)
       break
+    case NodeTypes.IF:
     case NodeTypes.ELEMENT:
       genNode(node.codegenNode, context)
       break
@@ -128,7 +129,55 @@ function genNode(node, context: CodegenContext) {
     case NodeTypes.COMPOUND_EXPRESSION:
       genCompoundExpression(node, context)
       break
+    case NodeTypes.JS_CONDITIONAL_EXPRESSION:
+      genConditionalExpression(node, context)
+      break
+    case NodeTypes.JS_CALL_EXPRESSION:
+      genCallExpression(node, context)
+      break
   }
+}
+
+function genCallExpression(node, context: CodegenContext) {
+  const { push, helper } = context
+  const callee = isString(node.callee) ? node.callee : helper(node.callee)
+  push(callee + '(')
+  genNodeList(node.arguments, context)
+  push(')')
+}
+
+// 处理if条件
+function genConditionalExpression(node, context: CodegenContext) {
+  const { test, consequent, newline: needNewline, alternate } = node
+  const { indent, deIndent, push, newLine } = context
+
+  if (test.type === NodeTypes.SIMPLE_EXPRESSION) {
+    genExpression(test, context)
+  }
+
+  context.indentLevel++
+  needNewline && newLine()
+
+  needNewline || push(` `)
+  push('? ')
+
+  genNode(consequent, context)
+
+  needNewline && newLine()
+  needNewline || push(` `)
+  push(': ')
+
+  const isNested = alternate.type === NodeTypes.JS_CONDITIONAL_EXPRESSION
+  if (isNested) {
+    context.indentLevel++
+  }
+  genNode(alternate, context)
+
+  if (isNested) {
+    context.indentLevel--
+  }
+
+  needNewline && deIndent()
 }
 
 // 处理表达式

@@ -8,10 +8,24 @@
     <script src="../../dist/vue.js"></script>
   </head>
   <body>
+    <div id="app"></div>
     <script>
-      const { compile } = Vue
+      const { compile, render, h } = Vue
 
-      console.log(compile(`<div v-if="isShow">Hello World</div>`))
+      const renderFn = compile(
+        `<div>Hello World<h1 v-if="isShow">test</h1></div>`
+      )
+
+      console.log(renderFn.toString())
+      render(
+        h({
+          render: renderFn,
+          data() {
+            return { isShow: false }
+          }
+        }),
+        document.querySelector('#app')
+      )
     </script>
   </body>
 </html>
